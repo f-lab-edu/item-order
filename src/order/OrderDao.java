@@ -1,6 +1,5 @@
 package order;
 
-import item.Item;
 import jdbc.JdbcManager;
 
 import java.sql.Connection;

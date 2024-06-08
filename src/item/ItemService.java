@@ -14,11 +14,6 @@ public class ItemService {
         return itemDao.selectOne(id);
     }
 
-    public boolean checkStock(Item item, int quantity) {
-        if (item.getStockCount() >= quantity) return true;
-        else return false;
-    }
-
     public int getStockCount(String id) {
         return itemDao.getStockCount(id);
     }

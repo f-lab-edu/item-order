@@ -1,9 +1,5 @@
 package command;
 
-import item.Item;
-
-import java.util.Map;
-
 public class QuitCommand implements Command {
     @Override
     public boolean input(String command) {
