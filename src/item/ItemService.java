@@ -1,26 +1,29 @@
 package item;
 
-import java.util.Map;
-
 public class ItemService {
-    private Map<String, Item> itemMap;
+    private ItemDao itemDao = new ItemDao();
 
-    public ItemService(Map<String, Item> itemMap) {
-        this.itemMap = itemMap;
+    public ItemService() {
     }
 
     public void displayItems() {
-        System.out.println("상품번호\t 상품명\t\t\t\t 판매가격\t 재고수");
-        for (Map.Entry<String, Item> item : itemMap.entrySet()) {
-            System.out.println(item.getKey() + "\t" + item.getValue().getName() + "\t" + item.getValue().getPrice() + "\t" + item.getValue().getStockCount());
-        }
+        itemDao.selectAll();
     }
 
-    public Item getItem(String itemId) {
-        return itemMap.get(itemId);
+    public Item getItem(String id) {
+        return itemDao.selectOne(id);
     }
 
-    public Map<String, Item> getItemMap() {
-        return itemMap;
+    public boolean checkStock(Item item, int quantity) {
+        if (item.getStockCount() >= quantity) return true;
+        else return false;
+    }
+
+    public int getStockCount(String id) {
+        return itemDao.getStockCount(id);
+    }
+
+    public int updateStockCount(String id, int remainStock) {
+        return itemDao.updateStockCount(id, remainStock);
     }
 }

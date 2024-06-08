@@ -1,9 +1,6 @@
 package command;
 
-import item.Item;
 import order.OrderService;
-
-import java.util.Map;
 
 public class OrderCommand implements Command {
 
@@ -13,8 +10,8 @@ public class OrderCommand implements Command {
     }
 
     @Override
-    public boolean execute(Map<String, Item> itemMap) {
-        OrderService orderService = new OrderService(itemMap);
+    public boolean execute() {
+        OrderService orderService = new OrderService();
         try {
             orderService.processOrder();
             return true;

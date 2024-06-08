@@ -1,80 +1,99 @@
 package order;
 
-import exception.SoldOutException;
-import input.InputValue;
+import constant.Constant;
 import item.Item;
 import item.ItemService;
+import state.ItemState;
+import state.OrderState;
+import validation.ItemValidate;
+import validation.QuantityValidate;
+import validation.Validation;
 
-import java.util.Map;
+import java.util.List;
 
 public class OrderService {
     private ItemService itemService;
     private Order order = new Order();
     private OrderPrinter orderPrinter;
+    private OrderDao orderDao = new OrderDao();
 
-    public OrderService(Map<String, Item> itemMap) {
-        this.itemService = new ItemService(itemMap);
+    public OrderService() {
+        this.itemService = new ItemService();
     }
 
     public void processOrder() {
-        // 상품 표시
         itemService.displayItems();
-        while (true) {
-            boolean addItem = getItemAndQuantity();
-            if (addItem == false) break;
+        String orderId = getItemAndQuantity();
+        if (!orderId.isEmpty()) {
+            List<OrderItem> orderItems = orderDao.showOrderList(orderId);
+            order.setOrderItems(orderItems);
+            orderPrinter = new OrderPrinter(itemService, order);
+            orderPrinter.showOrderDetails();
         }
-        orderPrinter = new OrderPrinter(itemService, order);
-        orderPrinter.showOrderDetails();
     }
 
-    private boolean getItemAndQuantity() {
-        String itemId = InputValue.getItemId();
-        String quantityStr = InputValue.getOrderCount();
+    private String getItemAndQuantity() {
+        // 주문 synchronized
+        OrderState orderState = new OrderState();
 
-        if (itemId.equals(" ") || quantityStr.equals(" ")) return false;
+        String orderId = generateOrderId();
+        order.setOrderId(orderId);
 
-        Item item = validateOrderItem(itemId);
-        int quantity = validateQuantity(quantityStr);
+        while (!orderState.isFinished()) {
+            Item item = new Item();
+            int quantity = 0;
+            orderState.setState(new ItemState());
+            orderState.processInput(Constant.ITEM);
 
-        if (item != null && quantity > 0) {
+            if (orderState.isFinished()) break;
+            item = itemService.getItem(orderState.getItemId());
+            quantity = Integer.parseInt(orderState.getQuantity());
+
+            // 주문 상품 추가
             addItems(item, quantity);
         }
+
+        return orderId;
+    }
+
+    private String generateOrderId() {
+        return String.valueOf(System.currentTimeMillis());
+    }
+    
+
+    private boolean validate(String itemId, String quantity) {
+        Validation itemValid = new ItemValidate();
+        Validation quantityValid = new QuantityValidate();
+
+        itemValid.validate(itemId);
+        quantityValid.validate(quantity);
+
         return true;
     }
 
-    private Item validateOrderItem(String itemName) {
-        Item item = itemService.getItem(itemName);
-        if (item == null) {
-            System.out.println("상품 번호를 확인하세요.");
-            throw new IllegalArgumentException("상품 번호를 확인하세요.");
-        }
-        return item;
-    }
-
-    private int validateQuantity(String quantityStr) {
-        int quantity = 0;
-        try {
-            quantity = Integer.parseInt(quantityStr);
-            if (quantity <= 0) {
-                throw new NumberFormatException();
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("수량을 확인하세요.");
-        }
-        return quantity;
-    }
-
     private void addItems(Item item, int quantity) {
-        boolean hasStock = false;
-        try {
-            hasStock = item.decreaseStock(quantity);
-        } catch (SoldOutException e) {
-            System.out.println(e.getMessage());
+        /* 수량이 있는지 확인
+           실제 주문할 때 여러 주문에서 하나만 실패시 나머지도 복구 필요
+           전체 주문완료시 재고감소
+        */
+        orderDao = new OrderDao();
+        // 재고 수량 확인
+        synchronized (this) {
+            int stock = itemService.getStockCount(item.getId());
+            if (quantity <= stock && stock > 1) {
+                int count = 0;
+                count += orderDao.insertOrder(item.getId(), quantity, order);
+
+                if (count >= 1) {
+                    int remainStock = stock - quantity;
+                    itemService.updateStockCount(item.getId(), remainStock);
+                }
+
+            } else {
+                System.out.println("재고가 부족합니다. : " + item.getId());
+            }
         }
-        if (hasStock) {
-            order.addItems(item.getId(), quantity);
-            calcPrice(item, quantity);
-        }
+        calcPrice(item, quantity);
     }
 
     public void calcPrice(Item item, int quantity) {

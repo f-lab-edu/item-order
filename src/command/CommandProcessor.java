@@ -15,11 +15,11 @@ public class CommandProcessor {
         this.commands = Arrays.asList(commands);
     }
 
-    public void run(Map<String, Item> itemMap) {
+    public void run() {
         while(true) {
-            String command = InputValue.getCommand();
+            String command = InputValue.getCommand("입력(o[order] 주문, q[quit] 종료):");
             try {
-                boolean handle = handle(command, itemMap);
+                boolean handle = handle(command);
                 if(!handle)
                     break;
             } catch (IllegalArgumentException e) {
@@ -29,13 +29,13 @@ public class CommandProcessor {
         }
     }
 
-    private boolean handle(String command, Map<String, Item> itemMap) {
+    private boolean handle(String command) {
         return commands.stream()
                 .filter(o -> o.input(command))
                 .findFirst()
                 .orElseThrow(() ->
                     new IllegalArgumentException("명령을 잘못입력했습니다.")
                 )
-                .execute(itemMap);
+                .execute();
     }
 }
