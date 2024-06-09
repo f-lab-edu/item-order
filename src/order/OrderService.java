@@ -13,8 +13,8 @@ import java.util.List;
 
 public class OrderService {
     private ItemService itemService;
-    private Order order = new Order();
     private OrderPrinter orderPrinter;
+    private Order order = new Order();
     private OrderDao orderDao = new OrderDao();
 
     public OrderService() {
@@ -71,29 +71,19 @@ public class OrderService {
         return true;
     }
 
-    private void addItems(Item item, int quantity) {
+    public void addItems(Item item, int quantity) {
         /* 수량이 있는지 확인
            실제 주문할 때 여러 주문에서 하나만 실패시 나머지도 복구 필요
-           전체 주문완료시 재고감소
-        */
+           전체 주문완료시 재고감소*/
         orderDao = new OrderDao();
-        // 재고 수량 확인
-        synchronized (this) {
-            int stock = itemService.getStockCount(item.getId());
-            if (quantity <= stock && stock > 1) {
-                int count = 0;
-                count += orderDao.insertOrder(item.getId(), quantity, order);
 
-                if (count >= 1) {
-                    int remainStock = stock - quantity;
-                    itemService.updateStockCount(item.getId(), remainStock);
-                }
+        // 재고 수량 확인 및 주문 삽입
+        int affected = 0;
 
-            } else {
-                System.out.println("재고가 부족합니다. : " + item.getId());
-            }
+        affected = orderDao.insertOrder(item.getId(), quantity, order);
+        if (affected >= 1) {
+            calcPrice(item, quantity);
         }
-        calcPrice(item, quantity);
     }
 
     public void calcPrice(Item item, int quantity) {
@@ -102,5 +92,4 @@ public class OrderService {
         order.setOrderPrice(orderPrice);
         order.setTotalPrice(totalPrice);
     }
-
 }

@@ -52,7 +52,7 @@ public class ItemDao {
 
     // 재고 수량
     public int getStockCount(String id) {
-        String sql = "SELECT stock_Count FROM item WHERE item_id = ?";
+        String sql = "SELECT stock_count FROM item WHERE item_id = ? FOR UPDATE";
         try (Connection conn = JdbcManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -64,7 +64,6 @@ public class ItemDao {
             }
 
         } catch (SQLException e) {
-            System.out.println("getStockCount 예외 발생");
             e.printStackTrace();
         }
         return -1;
@@ -79,13 +78,14 @@ public class ItemDao {
             pstmt.setInt(1, remainStock);
             pstmt.setString(2, id);
 
-            pstmt.executeUpdate();
+            int affected = 0;
+            affected += pstmt.executeUpdate();
 
-            return 1;
+            return affected;
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return 0;
+        return -1;
     }
 }

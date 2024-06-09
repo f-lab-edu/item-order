@@ -1,5 +1,7 @@
 package order;
 
+import exception.SoldOutException;
+import item.ItemDao;
 import jdbc.JdbcManager;
 
 import java.sql.Connection;
@@ -10,39 +12,40 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OrderDao {
-
+    private ItemDao itemDao = new ItemDao();
     public OrderDao() {}
 
-    public String generateOrderId() {
-        String sql = "INSERT INTO orders (item_id, stock_count) VALUES (NULL, 0)";
+    public int insertOrder(String itemId, int quantity, Order order) {
+        String insertSql = "INSERT INTO orders (order_id, item_id, stock_count) VALUES (?, ?, ?)";
         try (Connection conn = JdbcManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
 
-            pstmt.executeUpdate();
-            ResultSet rs = pstmt.getGeneratedKeys();
-            if (rs.next()) {
-                return rs.getString(1); // 생성된 order_id 반환
+            conn.setAutoCommit(false);
+            // 재고 확인
+            int stock = itemDao.getStockCount(itemId);
+            if (quantity > stock || stock <= 0) {
+                throw new SoldOutException("재고가 부족합니다. : " + itemId + " (" + stock + ")");
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
 
-    public int insertOrder(String id, int quantity, Order order) {
-        String sql = "INSERT INTO orders (order_id, item_id, stock_count) VALUES (?, ?, ?)";
-        try (Connection conn = JdbcManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            // Order 객체에서 필요한 정보를 가져와서 SQL 문에 설정합니다.
+            // 주문 insert
             pstmt.setString(1, order.getOrderId());
-            pstmt.setString(2, id);
+            pstmt.setString(2, itemId);
             pstmt.setInt(3, quantity);
 
-            pstmt.executeUpdate();
-            return 1;
+            int count = pstmt.executeUpdate();
 
-        } catch (SQLException e) {
+            // 재고 update
+            int affedcted = 0;
+            if (count >= 1) {
+                int remainCount = stock - quantity;
+                affedcted += itemDao.updateStockCount(itemId, remainCount);
+            }
+
+            conn.commit();
+
+            return affedcted;
+
+        } catch (SQLException | SoldOutException e) {
             e.printStackTrace();
         }
         return 0;
