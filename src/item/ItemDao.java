@@ -50,9 +50,10 @@ public class ItemDao {
         }
     }
 
-    // 재고 수량
+    // 재고 수량 확인
     public int getStockCount(String id) {
-        String sql = "SELECT stock_count FROM item WHERE item_id = ? FOR UPDATE";
+        // select for update 는 같은 커넥션을 유지하는 곳에서만 사용 가능
+        String sql = "SELECT stock_count FROM item WHERE item_id = ?";
         try (Connection conn = JdbcManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -73,7 +74,7 @@ public class ItemDao {
     public int updateStockCount(String id, int remainStock) {
         String sql = "UPDATE item SET stock_count = ? where item_id = ?";
         try (Connection conn = JdbcManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql);) {
 
             pstmt.setInt(1, remainStock);
             pstmt.setString(2, id);
