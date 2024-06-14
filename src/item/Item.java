@@ -37,4 +37,7 @@ public class Item {
         this.stockCount = stockCount;
     }
 
+    public int getStockCount() {
+        return stockCount;
+    }
 }

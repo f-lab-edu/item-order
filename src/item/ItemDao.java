@@ -1,92 +1,72 @@
 package item;
 
-import jdbc.JdbcManager;
+import jdbc.BaseDao;
 
-import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
-public class ItemDao {
-
-    public ItemDao() {}
+public class ItemDao extends BaseDao {
 
     public Item selectOne(String id) {
         String sql = "SELECT * FROM item WHERE item_id = ?";
-        Item item = null;
-        try (Connection conn = JdbcManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, id);
-            ResultSet rs = pstmt.executeQuery();
-
+        return (Item) executeQuery(sql, rs -> {
             if (rs.next()) {
-                item = new Item();
+                Item item = new Item();
                 item.setId(rs.getString("item_id"));
                 item.setName(rs.getString("item_nm"));
                 item.setPrice(rs.getInt("price"));
                 item.setStockCount(rs.getInt("stock_count"));
+                return item;
+            } else {
+                return null;
             }
-
-        } catch (SQLException e) {
-            System.out.println("select 메서드 예외 발생");
-            e.printStackTrace();
-        }
-        return item;
+        }, id);
     }
 
     public void selectAll() {
         String sql = "SELECT * FROM item";
-        try (Connection conn = JdbcManager.getConnection();
-             PreparedStatement psmt = conn.prepareStatement(sql)) {
 
-            ResultSet rs = psmt.executeQuery();
-
-            System.out.println("상품번호\t 상품명\t\t\t\t 판매가격\t 재고수");
-
+        List<Item> itemList = (List<Item>) executeQuery(sql, rs -> {
+            List<Item> resultList = new ArrayList<>();
             while (rs.next()) {
-                System.out.println(rs.getString("item_id") + "\t" + rs.getString("item_nm") + "\t" +
-                        rs.getString("price") + "\t" + rs.getString("stock_count"));
+                Item item = new Item();
+                item.setId(rs.getString("item_id"));
+                item.setName(rs.getString("item_nm"));
+                item.setPrice(rs.getInt("price"));
+                item.setStockCount(rs.getInt("stock_count"));
+                resultList.add(item);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+            return resultList;
+        });
+
+        System.out.println("상품번호\t 상품명\t\t\t\t 판매가격\t 재고수");
+        for (Item item : itemList) {
+            System.out.println(item.getId() + "\t" + item.getName() + "\t" +
+                            item.getPrice() + "\t" + item.getStockCount());
         }
     }
 
-    // 재고 수량 확인
     public int getStockCount(String id) {
-        // select for update 는 같은 커넥션을 유지하는 곳에서만 사용 가능
         String sql = "SELECT stock_count FROM item WHERE item_id = ?";
-        try (Connection conn = JdbcManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, id);
-            ResultSet rs = pstmt.executeQuery();
-
+        int stockCount = (int) executeQuery(sql, rs -> {
+            int count = 0;
             if (rs.next()) {
-                return rs.getInt("stock_count");
+                count = rs.getInt("stock_count");
             }
+            return count;
+        }, id);
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return -1;
+        return stockCount;
+
     }
 
-    // 재고 update
     public int updateStockCount(String id, int remainStock) {
         String sql = "UPDATE item SET stock_count = ? where item_id = ?";
-        try (Connection conn = JdbcManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);) {
 
-            pstmt.setInt(1, remainStock);
-            pstmt.setString(2, id);
-
-            int affected = 0;
-            affected += pstmt.executeUpdate();
-
-            return affected;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return -1;
+        return (int) executeQuery(sql, rs -> {
+            return null;
+        }, remainStock, id);
     }
 }

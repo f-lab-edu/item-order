@@ -1,42 +1,23 @@
 package order;
 
 import item.ItemDao;
-import jdbc.JdbcManager;
+import jdbc.BaseDao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OrderDao {
+public class OrderDao extends BaseDao {
     private ItemDao itemDao = new ItemDao();
     public OrderDao() {}
 
     // 주문 insert
     public int insertOrder(String itemId, int quantity, Order order) {
-        String insertSql = "INSERT INTO orders (order_id, item_id, stock_count) VALUES (?, ?, ?)";
-        try (Connection conn = JdbcManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
-            conn.createStatement();
+        String sql = "INSERT INTO orders (order_id, item_id, stock_count) " +
+                     "VALUES (?, ?, ?)";
 
-            conn.setAutoCommit(false);
-
-            // 주문 insert
-            pstmt.setString(1, order.getOrderId());
-            pstmt.setString(2, itemId);
-            pstmt.setInt(3, quantity);
-
-            int count = pstmt.executeUpdate();
-            conn.commit();
-
-            return count;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
+        return (int) executeQuery(sql, rs -> {
+            return null;
+        }, order.getOrderId(), itemId, quantity);
     }
 
 
@@ -47,26 +28,19 @@ public class OrderDao {
                          "ON o.item_id = i.item_id " +
                       "WHERE o.order_id = ?";
 
-        List<OrderItem> orderList = new ArrayList<>();
-        try (Connection conn = JdbcManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, orderId);
-            ResultSet rs = pstmt.executeQuery();
-
-
+        List<OrderItem> orderList = (List<OrderItem>) executeQuery(sql, rs -> {
+            List<OrderItem> resultList = new ArrayList<>();
             while (rs.next()) {
                 OrderItem orderItem = new OrderItem();
                 orderItem.setItemId(rs.getString("item_id"));
                 orderItem.setItemNm(rs.getString("item_nm"));
                 orderItem.setPrice(rs.getInt("price"));
                 orderItem.setOrderCount(rs.getInt("stock_count"));
-                orderList.add(orderItem);
+                resultList.add(orderItem);
             }
+            return resultList;
+        }, orderId);
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
         return orderList;
     }
 }

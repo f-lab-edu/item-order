@@ -15,7 +15,7 @@ public class CommandProcessor {
 
     public void run() {
         while(true) {
-            String command = InputValue.getCommand("입력(o[order] 주문, q[quit] 종료):");
+            String command = InputValue.getCommand("입력(o[order] 주문, q[quit] 종료)");
             try {
                 boolean handle = handle(command);
                 if(!handle)
