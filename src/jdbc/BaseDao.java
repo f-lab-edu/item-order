@@ -7,7 +7,7 @@ import java.sql.SQLException;
 
 public abstract class BaseDao<T> {
 
-    public <T> T executeQuery(String sql,
+    public <T> T execute(String sql,
                               ResultSetHandler<T> handler,
                               Object...params) {
         try (Connection conn = JdbcManager.getConnection();
@@ -18,15 +18,13 @@ public abstract class BaseDao<T> {
             }
 
             if (sql.trim().startsWith("SELECT")) {
-
                 ResultSet rs = pstmt.executeQuery();
                 return handler.handle(rs);
-            } else {
 
+            } else {
                 int count = pstmt.executeUpdate();
                 return (T) Integer.valueOf(count);
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         }

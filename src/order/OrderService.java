@@ -110,6 +110,10 @@ public class OrderService {
             } finally {
                 lock.unlock();
             }
+            // 장바구니에 넣을때도 락 걸어야해
+            // 재고수량에 접근할때는 무조건
+            // 장바구니 -> 리드락, 재고가 있는지만 확인하면 됨
+            // 수량 감소시킬때만
 
             /* synchroinzed 사용
             synchronized (this) {

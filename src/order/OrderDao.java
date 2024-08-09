@@ -15,7 +15,7 @@ public class OrderDao extends BaseDao {
         String sql = "INSERT INTO orders (order_id, item_id, stock_count) " +
                      "VALUES (?, ?, ?)";
 
-        return (int) executeQuery(sql, rs -> {
+        return (int) execute(sql, rs -> {
             return null;
         }, order.getOrderId(), itemId, quantity);
     }
@@ -28,7 +28,7 @@ public class OrderDao extends BaseDao {
                          "ON o.item_id = i.item_id " +
                       "WHERE o.order_id = ?";
 
-        List<OrderItem> orderList = (List<OrderItem>) executeQuery(sql, rs -> {
+        List<OrderItem> orderList = (List<OrderItem>) execute(sql, rs -> {
             List<OrderItem> resultList = new ArrayList<>();
             while (rs.next()) {
                 OrderItem orderItem = new OrderItem();

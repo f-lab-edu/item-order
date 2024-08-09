@@ -3,7 +3,15 @@ package fsm;
 import constant.Constant;
 import input.InputValue;
 
-public class QuantityState implements State<OrderContext>{
+public class QuantityState implements StateHandler {
+
+    @Override
+    public StateHandler handlerEvent(String event) {
+
+
+
+        return new QuantityState();
+    }
 
     @Override
     public void handleInput(OrderContext context) {

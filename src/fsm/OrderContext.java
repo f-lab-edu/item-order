@@ -2,38 +2,44 @@ package fsm;
 
 import constant.Constant;
 
-public class OrderContext extends Fsm<State> {
-    private State state;
+public class OrderContext extends Fsm<StateHandler> {
+    // 오더의 로작
     private String itemId;
     private String quantity;
-    private boolean isFinished;
 
     public OrderContext() {
         state = new ItemState();
         isFinished = false;
     }
 
-    @Override
-    public void transitionState() { // 상태 전이 로직
-        if (!isFinished) {
-            if (state instanceof ItemState)
-                state = new QuantityState();
-            else if (state instanceof QuantityState)
-                state = new ItemState();
-            state.handleInput(this);
-        }
-    }
+//    @Override
+//    public void transitionState() { // 상태 전이 로직
+//        // instanceof
+//        // 값으로 비료 -> enum
+//        if (!isFinished) {
+//            if (state instanceof ItemState)
+//                state = new QuantityState();
+//            else if (state instanceof QuantityState)
+//                state = new ItemState();
+//            state.handleInput(this);
+//        }
+//    }
 
     @Override
     public void handleEvent(String event) { // 이벤트 처리 로직
         if (!isFinished) {
-            state.handleInput(this);
+            //state.handleInput(this);
+            StateHandler newState = state.handlerEvent(event);
+            if (state != newState) {
+                state = newState;
+                state.handleInput(this);
+            }
+
         }
     }
 
     public void processOrder() {
-        state = new ItemState();
-        handleEvent(Constant.ITEM);
+        handleEvent(State.ORDER_ITEM.name());
     }
 
     /* getter & setter */
